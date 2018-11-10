@@ -228,7 +228,7 @@ int IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int
 		else
 			pKiller->m_Score++; // normal kill
 	}
-	if(Weapon == WEAPON_SELF)
+	if(Weapon == WEAPON_SELF && !g_Config.m_SvFastkill)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
 
 
@@ -265,9 +265,16 @@ void IGameController::OnCharacterSpawn(CCharacter *pChr)
 		// default health
 		pChr->IncreaseHealth(10);
 
-		// give default weapons
-		pChr->GiveWeapon(WEAPON_HAMMER, -1);
-		pChr->GiveWeapon(WEAPON_GUN, 10);
+		if(IsInstagib())
+		{
+			pChr->GiveWeapon(WEAPON_LASER, -1);
+		}
+		else
+		{
+			// give default weapons
+			pChr->GiveWeapon(WEAPON_HAMMER, -1);
+			pChr->GiveWeapon(WEAPON_GUN, 10);
+		}
 	}
 }
 
@@ -317,12 +324,12 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 			Type = PICKUP_NINJA;
 	}
 
-	if(Type != -1)
+		if(Type != -1 && !IsInstagib())
 	{
 		new CPickup(&GameServer()->m_World, Type, Pos);
 		return true;
 	}
-
+	
 	return false;
 }
 
@@ -403,7 +410,8 @@ void IGameController::CheckReadyStates(int WithoutID)
 		case IGS_START_COUNTDOWN:
 		case IGS_END_MATCH:
 		case IGS_END_ROUND:
-			// not affected
+		case IGS_RESTART_GAME:
+			// not effected
 			break;
 		}
 	}
@@ -639,6 +647,17 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			m_SuddenDeath = 0;
 			GameServer()->m_World.m_Paused = true;
 		}
+	case IGS_RESTART_GAME:
+		// only possible when game is running or paused
+		if(m_GameState == IGS_GAME_RUNNING || m_GameState == IGS_GAME_PAUSED)
+		{
+			m_GameState = GameState;
+			m_GameStateTimer = Timer*Server()->TickSpeed();
+		}
+		else if(m_GameState == IGS_RESTART_GAME)
+		{
+			m_GameState = IGS_GAME_RUNNING;
+		}
 	}
 }
 
@@ -699,6 +718,7 @@ void IGameController::Snap(int SnappingClient)
 	{
 	case IGS_WARMUP_GAME:
 	case IGS_WARMUP_USER:
+	case IGS_RESTART_GAME:
 		pGameData->m_GameStateFlags |= GAMESTATEFLAG_WARMUP;
 		if(m_GameStateTimer != TIMER_INFINITE)
 			pGameData->m_GameStateEndTick = Server()->Tick()+m_GameStateTimer;
@@ -791,6 +811,9 @@ void IGameController::Tick()
 				m_MatchCount++;
 				StartMatch();
 				break;
+			case IGS_RESTART_GAME:
+				StartMatch();
+				break;
 			case IGS_WARMUP_GAME:
 			case IGS_GAME_RUNNING:
 				// not effected
@@ -818,6 +841,7 @@ void IGameController::Tick()
 			case IGS_GAME_RUNNING:
 			case IGS_END_MATCH:
 			case IGS_END_ROUND:
+			case IGS_RESTART_GAME:
 				// not effected
 				break;
  			}
@@ -1213,4 +1237,25 @@ int IGameController::GetStartTeam()
 		return Team;
 	}
 	return TEAM_SPECTATORS;
+}
+
+void IGameController::MakeInstagib(bool Option)
+{
+	m_pInstagib = Option;
+}
+
+bool IGameController::IsInstagib()
+{
+	return m_pInstagib;
+}
+
+void IGameController::MakeinQ(const char *Gametype, bool Option)
+{
+	m_pinQ = Option;
+	m_pGameType = Gametype;
+}
+
+bool IGameController::IsinQ()
+{
+	return m_pinQ;
 }

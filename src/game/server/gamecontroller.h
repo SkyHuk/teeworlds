@@ -50,6 +50,8 @@ class IGameController
 		
 		IGS_END_MATCH,			// match is over (tick timer)
 		IGS_END_ROUND,			// round is over (tick timer)
+
+		IGS_RESTART_GAME
  	};
 	EGameState m_GameState;
 	int m_GameStateTimer;
@@ -64,7 +66,7 @@ class IGameController
 
 	// map
 	char m_aMapWish[128];
-	
+
 	void CycleMap();
 
 	// spawn
@@ -118,6 +120,9 @@ protected:
 
 	void UpdateGameInfo(int ClientID);
 
+		bool m_pInstagib;
+	bool m_pinQ;
+	
 public:
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController() {};
@@ -182,6 +187,7 @@ public:
 			SetGameState(IGS_WARMUP_USER, Seconds);
 	}
 	void SwapTeamscore();
+	void RestartGame(int Timer) { SetGameState(IGS_RESTART_GAME, Timer); }
 
 	// general
 	virtual void Snap(int SnappingClient);
@@ -214,6 +220,11 @@ public:
 	
 	int GetRealPlayerNum() const { return m_aTeamSize[TEAM_RED]+m_aTeamSize[TEAM_BLUE]; }
 	int GetStartTeam();
+
+	bool IsInstagib();
+	void MakeInstagib(bool Option);
+	bool IsinQ();
+	void MakeinQ(const char *Gametype, bool Option);
 };
 
 #endif
