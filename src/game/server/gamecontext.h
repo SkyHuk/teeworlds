@@ -63,6 +63,14 @@ class CGameContext : public IGameServer
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainSettingUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConAllSpec(IConsole::IResult *pResult, void *pUserData);
+	static void ConAllRed(IConsole::IResult *pResult, void *pUserData);
+	static void ConAllBlue(IConsole::IResult *pResult, void *pUserData);
+	static void ConSayTo(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetName(IConsole::IResult *pResult, void *pUserData);
+	static void ConMute(IConsole::IResult *pResult, void *pUserData);
+	static void ConDetectedPlayers(IConsole::IResult *pResult, void *pUserData);
+	static void ConResetDetectedPlayers(IConsole::IResult *pResult, void *pUserData);
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -136,6 +144,7 @@ public:
 
 	// network
 	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);
+	void SendChatTarget(int To, const char *pText);
 	void SendBroadcast(const char *pText, int ClientID);
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);
@@ -153,6 +162,8 @@ public:
 
 	//
 	void SwapTeams();
+
+	void OnDetect(int ClientID);
 
 	// engine events
 	virtual void OnInit();
