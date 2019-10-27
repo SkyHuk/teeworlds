@@ -75,18 +75,20 @@ void IGameController::DoActivityCheck()
 					DoTeamChange(currentPlayer, TEAM_SPECTATORS);
 					break;
 				case 2:
-					// TODO: refactor, extremly inefficient
-					// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
-					int Spectators = 0;
-					for (int j = 0; j < MAX_CLIENTS; ++j) {
-						if (GameServer()->m_apPlayers[j] && GameServer()->m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS) {
-							++Spectators;
+					{
+						// TODO: refactor, extremly inefficient
+						// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
+						int Spectators = 0;
+						for (int j = 0; j < MAX_CLIENTS; ++j) {
+							if (GameServer()->m_apPlayers[j] && GameServer()->m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS) {
+								++Spectators;
+							}
 						}
-					}
-					if (Spectators >= Server()->MaxClients() - g_Config.m_SvPlayerSlots) {
-						shouldKick = true;
-					} else {
-						DoTeamChange(GameServer()->m_apPlayers[i], TEAM_SPECTATORS);
+						if (Spectators >= Server()->MaxClients() - g_Config.m_SvPlayerSlots) {
+							shouldKick = true;
+						} else {
+							DoTeamChange(GameServer()->m_apPlayers[i], TEAM_SPECTATORS);
+						}
 					}
 					break;
 				case 3:
