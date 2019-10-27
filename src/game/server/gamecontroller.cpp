@@ -51,52 +51,51 @@ IGameController::IGameController(CGameContext *pGameServer)
 	m_aNumSpawnPoints[2] = 0;
 }
 
-//activity
 void IGameController::DoActivityCheck()
 {
-	if (g_Config.m_SvInactiveKickTime == 0)
-		return;
+	if (g_Config.m_SvInactiveKickTime == 0) { return; }
+	if (g_Config.m_SvInactiveKick == 0) { return; }
 
 	for (int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		if (GameServer()->m_apPlayers[i] && !GameServer()->m_apPlayers[i]->IsDummy() && (GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS || g_Config.m_SvInactiveKick > 0) &&
-			!Server()->IsAuthed(i) && (GameServer()->m_apPlayers[i]->m_InactivityTickCounter > g_Config.m_SvInactiveKickTime * Server()->TickSpeed() * 60))
+		if (!GameServer()->m_apPlayers[i]) { continue; }
+		if (Server()->IsAuthed(i)) { continue; }
+		CPlayer* currentPlayer = GameServer()->m_apPlayers[i];
+		if (currentPlayer->IsDummy()) { continue; }
+		if ((currentPlayer->m_InactivityTickCounter <= g_Config.m_SvInactiveKickTime * Server()->TickSpeed() * 60)) { continue; }
+		
+		bool shouldKick = false;
+
+		if (currentPlayer->GetTeam() == TEAM_SPECTATORS && g_Config.m_SvInactiveKickSpec)
 		{
-			if (GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS)
-			{
-				if (g_Config.m_SvInactiveKickSpec)
-					Server()->Kick(i, "Kicked for inactivity");
-			}
-			else
-			{
-				switch (g_Config.m_SvInactiveKick)
-				{
+			shouldKick = true;
+		} else {
+			switch (g_Config.m_SvInactiveKick) {
 				case 1:
-				{
-					// move player to spectator
-					DoTeamChange(GameServer()->m_apPlayers[i], TEAM_SPECTATORS);
-				}
-				break;
+					DoTeamChange(currentPlayer, TEAM_SPECTATORS);
+					break;
 				case 2:
-				{
+					// TODO: refactor, extremly inefficient
 					// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
 					int Spectators = 0;
-					for (int j = 0; j < MAX_CLIENTS; ++j)
-						if (GameServer()->m_apPlayers[j] && GameServer()->m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS)
+					for (int j = 0; j < MAX_CLIENTS; ++j) {
+						if (GameServer()->m_apPlayers[j] && GameServer()->m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS) {
 							++Spectators;
-					if (Spectators >= Server()->MaxClients() - g_Config.m_SvPlayerSlots)
-						Server()->Kick(i, "Kicked for inactivity");
-					else
+						}
+					}
+					if (Spectators >= Server()->MaxClients() - g_Config.m_SvPlayerSlots) {
+						shouldKick = true;
+					} else {
 						DoTeamChange(GameServer()->m_apPlayers[i], TEAM_SPECTATORS);
-				}
-				break;
+					}
+					break;
 				case 3:
-				{
-					// kick the player
-					Server()->Kick(i, "Kicked for inactivity");
+					shouldKick = true;
+					break;
 				}
-				}
-			}
+		}
+		if (shouldKick) {
+			Server()->Kick(i, "Kicked for inactivity");
 		}
 	}
 }
