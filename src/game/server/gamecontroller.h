@@ -121,7 +121,7 @@ protected:
 
 	void UpdateGameInfo(int ClientID);
 
-		bool m_pInstagib;
+	bool m_pInstagib;
 	bool m_pinQ;
 	
 public:
